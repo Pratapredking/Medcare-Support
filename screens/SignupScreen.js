@@ -11,15 +11,17 @@ function SignupScreen() {
 
    const authCtx = useContext(AuthContext);
 
-  async function signupHandler({ email, password }) {
+  async function signupHandler({ email, password, role }) {
     setIsAuthenticating(true);
      try {
-      const token = await createUser(email, password);
-      authCtx.authenticate(token);
+      const authenticatedUser = await createUser(email, password, role);
+      authCtx.authenticate(authenticatedUser);
     } catch (error) {
       Alert.alert(
         'Authentication failed',
-        'Could not create user, please check your input and try again later.'
+        error instanceof Error
+          ? error.message
+          : 'Could not create user. Please check your input and try again.'
       );
       
     }

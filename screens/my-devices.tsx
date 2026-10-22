@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,9 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionButton, PALETTE, PageHeader } from '@/components/medical-support-ui';
 import { type MedicalDevice, useMedicalSupport } from '@/context/medical-support';
 import type { MedicalSupportStackParamList } from '@/screens/navigation-types';
+import { AuthContext } from '@/store/auth-context';
 
 export default function MyDevicesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MedicalSupportStackParamList>>();
+  const { userId } = useContext(AuthContext);
   const { devices, devicesError, isLoadingDevices, deleteDevice, refreshDevices } = useMedicalSupport();
   const [deletingDeviceId, setDeletingDeviceId] = useState<string | null>(null);
 
@@ -53,7 +55,11 @@ export default function MyDevicesScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      <PageHeader title="My Devices" subtitle={`${devices.length} devices in your inventory`} onBack={() => navigation.goBack()} />
+      <PageHeader
+        title="Marketplace Devices"
+        subtitle={`${devices.length} shared device listings`}
+        onBack={() => navigation.goBack()}
+      />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -85,7 +91,7 @@ export default function MyDevicesScreen() {
         {!isLoadingDevices && !devicesError && devices.length === 0 ? (
           <View style={styles.statePanel}>
             <Text style={styles.emptyTitle}>No devices listed yet</Text>
-            <Text style={styles.stateText}>Add the first device you want to offer in the marketplace.</Text>
+            <Text style={styles.stateText}>Add the first device to the shared marketplace.</Text>
           </View>
         ) : null}
 
@@ -93,25 +99,32 @@ export default function MyDevicesScreen() {
           <View key={device.id} style={styles.panel}>
             <Text style={styles.itemTitle}>{device.name}</Text>
             <Text style={styles.description}>Model: {device.model}</Text>
+            <Text style={styles.listedBy}>
+              Listed by: {device.listedByRole === 'technician' ? 'Technician' : 'Doctor'} / {device.listedByName}
+            </Text>
             <Text style={styles.price}>₹{Number(device.price).toLocaleString('en-IN')}</Text>
             <View style={styles.listingFooter}>
               <Text style={styles.smallText}>Status: Listed</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Delete ${device.name} listing`}
-                disabled={deletingDeviceId !== null}
-                onPress={() => confirmDelete(device)}
-                style={({ pressed }) => [
-                  styles.deleteButton,
-                  deletingDeviceId !== null && styles.deleteButtonDisabled,
-                  pressed && styles.deleteButtonPressed,
-                ]}>
-                {deletingDeviceId === device.id ? (
-                  <ActivityIndicator size="small" color="#b91c1c" />
-                ) : (
-                  <Text style={styles.deleteButtonText}>Delete listing</Text>
-                )}
-              </Pressable>
+              {device.listedById === userId ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${device.name} listing`}
+                  disabled={deletingDeviceId !== null}
+                  onPress={() => confirmDelete(device)}
+                  style={({ pressed }) => [
+                    styles.deleteButton,
+                    deletingDeviceId !== null && styles.deleteButtonDisabled,
+                    pressed && styles.deleteButtonPressed,
+                  ]}>
+                  {deletingDeviceId === device.id ? (
+                    <ActivityIndicator size="small" color="#b91c1c" />
+                  ) : (
+                    <Text style={styles.deleteButtonText}>Delete listing</Text>
+                  )}
+                </Pressable>
+              ) : (
+                <Text style={styles.sharedText}>Shared listing</Text>
+              )}
             </View>
           </View>
         ))}
@@ -133,6 +146,7 @@ const styles = StyleSheet.create({
   panel: { padding: 18, marginTop: 18, borderRadius: 16, backgroundColor: PALETTE.white },
   itemTitle: { color: '#244A35', fontSize: 16, fontWeight: '700' },
   description: { color: PALETTE.text, lineHeight: 22, marginTop: 8 },
+  listedBy: { color: '#436854', fontSize: 13, fontWeight: '700', marginTop: 7 },
   price: { color: PALETTE.primary, fontSize: 18, fontWeight: '900', marginVertical: 8 },
   smallText: { color: '#708575', fontSize: 12 },
   listingFooter: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
@@ -140,4 +154,5 @@ const styles = StyleSheet.create({
   deleteButtonDisabled: { opacity: 0.55 },
   deleteButtonPressed: { opacity: 0.7 },
   deleteButtonText: { color: '#b91c1c', fontSize: 12, fontWeight: '800' },
+  sharedText: { color: '#708575', fontSize: 12, fontWeight: '700' },
 });

@@ -14,3 +14,4 @@ npx expo install @react-navigation/native @react-navigation/native-stack react-n
 
 
 Force Expo to launch in Expo Go mode - npx expo start --go --tunnel --clear
+

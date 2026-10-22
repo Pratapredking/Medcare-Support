@@ -18,8 +18,16 @@ type FirebaseDeviceRecord = {
   model: string;
   price: number;
   status: 'active';
-  listedByRole: 'doctor';
+  listedByRole: 'doctor' | 'technician';
+  listedById: string;
+  listedByName: string;
   createdAt: string;
+};
+
+type MarketplaceLister = {
+  userId: string;
+  name: string;
+  role: 'doctor' | 'technician';
 };
 
 async function getFirebaseError(response: Response) {
@@ -55,7 +63,12 @@ function parseDevice(id: string, value: unknown): MedicalDevice | null {
     model,
     price: String(price),
     status: 'active',
-    listedByRole: 'doctor',
+    listedByRole: value.listedByRole === 'technician' ? 'technician' : 'doctor',
+    listedById: typeof value.listedById === 'string' ? value.listedById : undefined,
+    listedByName:
+      typeof value.listedByName === 'string' && value.listedByName.trim()
+        ? value.listedByName
+        : 'Unknown user',
     createdAt: typeof createdAt === 'string' ? createdAt : '',
   };
 }
@@ -81,13 +94,19 @@ export async function getMarketplaceDevices(idToken: string, signal?: AbortSigna
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }
 
-export async function createMarketplaceDevice(device: NewDevice, idToken: string): Promise<MedicalDevice> {
+export async function createMarketplaceDevice(
+  device: NewDevice,
+  idToken: string,
+  lister: MarketplaceLister,
+): Promise<MedicalDevice> {
   const record: FirebaseDeviceRecord = {
     name: device.name.trim(),
     model: device.model.trim(),
     price: Number(device.price),
     status: 'active',
-    listedByRole: 'doctor',
+    listedByRole: lister.role,
+    listedById: lister.userId,
+    listedByName: lister.name,
     createdAt: new Date().toISOString(),
   };
 
@@ -116,6 +135,8 @@ export async function createMarketplaceDevice(device: NewDevice, idToken: string
     price: String(record.price),
     status: record.status,
     listedByRole: record.listedByRole,
+    listedById: record.listedById,
+    listedByName: record.listedByName,
     createdAt: record.createdAt,
   };
 }

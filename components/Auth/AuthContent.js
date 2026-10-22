@@ -25,7 +25,7 @@ function AuthContent({ isLogin, onAuthenticate }) {
   }
 
   function submitHandler(credentials) {
-    let { email, confirmEmail, password, confirmPassword } = credentials;
+    let { email, confirmEmail, password, confirmPassword, role } = credentials;
 
     email = email.trim();
     password = password.trim();
@@ -49,7 +49,7 @@ function AuthContent({ isLogin, onAuthenticate }) {
       });
       return;
     }
-    onAuthenticate({ email, password });
+    onAuthenticate({ email, password, ...(!isLogin && { role }) });
   }
 
   return (
@@ -57,7 +57,7 @@ function AuthContent({ isLogin, onAuthenticate }) {
       <Text style={styles.eyebrow}>MEDICAL SUPPORT</Text>
       <Text style={styles.title}>{isLogin ? 'Welcome back' : 'Create your account'}</Text>
       <Text style={styles.subtitle}>
-        {isLogin ? 'Sign in to manage your medical devices.' : 'Enter your details to get started.'}
+        {isLogin ? 'Sign in to access your assigned workspace.' : 'Enter your details and choose your role.'}
       </Text>
       <AuthForm
         isLogin={isLogin}

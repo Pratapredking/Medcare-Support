@@ -14,12 +14,14 @@ function LoginScreen() {
   async function loginHandler({ email, password }) {
     setIsAuthenticating(true);
      try {
-      const token = await login(email, password);
-      authCtx.authenticate(token);
+      const authenticatedUser = await login(email, password);
+      authCtx.authenticate(authenticatedUser);
     } catch (error) {
       Alert.alert(
         'Authentication failed!',
-        'Could not log you in. Please check your credentials or try again later!'
+        error instanceof Error
+          ? error.message
+          : 'Could not log you in. Please check your credentials or try again later!'
       );
       
     }

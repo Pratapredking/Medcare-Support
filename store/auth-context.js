@@ -4,29 +4,36 @@ import { createContext, useState } from 'react';
 
 export const AuthContext = createContext({
   token: '',
+  userId: '',
+  email: '',
+  role: 'doctor',
   isAuthenticated: false,
-  authenticate: (token) => {},
+  authenticate: (session) => {},
   logout: () => {},
 });
 
 function AuthContextProvider({ children }) {
-  const [authToken, setAuthToken] = useState();
+  const [session, setSession] = useState(null);
 
-  function authenticate(token) {
-    setAuthToken(token);
-    AsyncStorage.setItem('token', token);
+  function authenticate(nextSession) {
+    setSession(nextSession);
+    AsyncStorage.setItem('session', JSON.stringify(nextSession));
+    AsyncStorage.removeItem('token');
   }
 
   function logout() {
-    setAuthToken(null);
-     AsyncStorage.removeItem('token');
+    setSession(null);
+    AsyncStorage.multiRemove(['session', 'token']);
   }
 
   const value = {
-    token: authToken,
-    isAuthenticated: !!authToken,
-    authenticate: authenticate,
-    logout: logout,
+    token: session?.token || '',
+    userId: session?.userId || '',
+    email: session?.email || '',
+    role: session?.role || 'doctor',
+    isAuthenticated: !!session?.token,
+    authenticate,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

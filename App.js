@@ -35,6 +35,8 @@ function AuthStack() {
 
 function AuthenticatedStack() {
   const authCtx = useContext(AuthContext);
+  const isDoctor = authCtx.role === 'doctor';
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -57,7 +59,9 @@ function AuthenticatedStack() {
         />
       <Stack.Screen name="MyDevices" component={MyDevicesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AddDevice" component={AddDeviceScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ReportFault" component={ReportFaultScreen} options={{ headerShown: false }} />
+      {isDoctor && (
+        <Stack.Screen name="ReportFault" component={ReportFaultScreen} options={{ headerShown: false }} />
+      )}
     </Stack.Navigator>
   );
 }
@@ -85,10 +89,20 @@ function Root() {
 
   useEffect(() => {
     async function fetchToken() {
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedSession = await AsyncStorage.getItem('session');
+      const legacyToken = await AsyncStorage.getItem('token');
 
-      if (storedToken) {
-        authCtx.authenticate(storedToken);
+      if (storedSession) {
+        try {
+          const parsedSession = JSON.parse(storedSession);
+          if (parsedSession?.token) {
+            authCtx.authenticate(parsedSession);
+          }
+        } catch {
+          await AsyncStorage.removeItem('session');
+        }
+      } else if (legacyToken) {
+        authCtx.authenticate({ token: legacyToken, userId: '', email: '', role: 'doctor' });
       }
 
       setIsTryingLogin(false);
